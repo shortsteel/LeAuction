@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Layout, Menu, Badge, Avatar, Dropdown, Button, Drawer, Grid, Alert } from 'antd';
+import { Layout, Menu, Badge, Avatar, Dropdown, Button, Drawer, Grid, Alert, Space } from 'antd';
 import {
   HomeOutlined,
   PlusOutlined,
@@ -22,11 +22,15 @@ const DISCLAIMER_BANNER =
 const { Header, Content } = Layout;
 const { useBreakpoint } = Grid;
 
-const menuItems = [
+const allMenuItems = [
   { key: '/', icon: <HomeOutlined />, label: '拍卖大厅' },
   { key: '/publish', icon: <PlusOutlined />, label: '发布拍品' },
   { key: '/my-items', icon: <ShoppingOutlined />, label: '我的拍品' },
   { key: '/my-bids', icon: <TagsOutlined />, label: '我的竞拍' },
+];
+
+const publicMenuItems = [
+  { key: '/', icon: <HomeOutlined />, label: '拍卖大厅' },
 ];
 
 export default function AppLayout() {
@@ -40,6 +44,8 @@ export default function AppLayout() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [bannerVisible, setBannerVisible] = useState(true);
   const [disclaimerOpen, setDisclaimerOpen] = useState(false);
+
+  const menuItems = user ? allMenuItems : publicMenuItems;
 
   const fetchUnread = useCallback(() => {
     if (user) {
@@ -134,19 +140,28 @@ export default function AppLayout() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Badge count={unreadCount} size="small">
-            <Button
-              type="text"
-              icon={<BellOutlined style={{ fontSize: 18 }} />}
-              onClick={() => navigate('/notifications')}
-            />
-          </Badge>
-          <Dropdown menu={userMenu} trigger={['click']}>
-            <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Avatar src={user?.avatar_url || undefined} icon={<UserOutlined />} size="small" />
-              {!isMobile && <span>{user?.nickname}</span>}
-            </div>
-          </Dropdown>
+          {user ? (
+            <>
+              <Badge count={unreadCount} size="small">
+                <Button
+                  type="text"
+                  icon={<BellOutlined style={{ fontSize: 18 }} />}
+                  onClick={() => navigate('/notifications')}
+                />
+              </Badge>
+              <Dropdown menu={userMenu} trigger={['click']}>
+                <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Avatar src={user.avatar_url || undefined} icon={<UserOutlined />} size="small" />
+                  {!isMobile && <span>{user.nickname}</span>}
+                </div>
+              </Dropdown>
+            </>
+          ) : (
+            <Space>
+              <Button type="link" onClick={() => navigate('/login')}>登录</Button>
+              <Button type="primary" onClick={() => navigate('/register')}>注册</Button>
+            </Space>
+          )}
         </div>
       </Header>
 

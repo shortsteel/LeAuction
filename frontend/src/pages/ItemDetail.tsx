@@ -46,8 +46,8 @@ export default function ItemDetail() {
       setItem(itemRes.data.item);
       setBids(bidsRes.data.bids);
 
-      // Fetch transaction if ended with winner
-      if (['ended_won', 'completed'].includes(itemRes.data.item.status)) {
+      // Fetch transaction if ended with winner (only when logged in)
+      if (user && ['ended_won', 'completed'].includes(itemRes.data.item.status)) {
         try {
           const txnRes = await transactionsApi.getByItem(Number(id));
           setTransaction(txnRes.data.transaction);
@@ -60,7 +60,7 @@ export default function ItemDetail() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, user]);
 
   useEffect(() => {
     fetchItem();

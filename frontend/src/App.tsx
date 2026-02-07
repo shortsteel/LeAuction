@@ -20,11 +20,17 @@ export default function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            {/* Public routes */}
+            {/* Public routes (no layout) */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            {/* Protected routes */}
+            {/* Public routes (with layout, no auth required) */}
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/items/:id" element={<ItemDetail />} />
+            </Route>
+
+            {/* Protected routes (require login) */}
             <Route
               element={
                 <ProtectedRoute>
@@ -32,8 +38,6 @@ export default function App() {
                 </ProtectedRoute>
               }
             >
-              <Route path="/" element={<Home />} />
-              <Route path="/items/:id" element={<ItemDetail />} />
               <Route path="/publish" element={<PublishItem />} />
               <Route path="/publish/:id" element={<PublishItem />} />
               <Route path="/my-items" element={<MyItems />} />

@@ -26,10 +26,14 @@ client.interceptors.response.use(
     if (status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      // Don't redirect if already on auth pages
-      if (!window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/register')) {
+      // Don't redirect if on public pages or auth pages
+      const path = window.location.pathname;
+      const isPublicPage = path === '/' || path.startsWith('/items/');
+      const isAuthPage = path.startsWith('/login') || path.startsWith('/register');
+      if (!isPublicPage && !isAuthPage) {
         window.location.href = '/login';
       }
+      return Promise.reject(error);
     }
 
     const errorMsg = data?.errors?.[0] || data?.message || '请求失败，请稍后重试';
