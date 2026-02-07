@@ -15,8 +15,14 @@ const sortOptions = [
   { label: '出价最多', value: 'most_bids' },
 ];
 
+const statusOptions = [
+  { label: '全部状态', value: 'all' },
+  { label: '进行中', value: 'active' },
+  { label: '已结束', value: 'ended' },
+];
+
 const categoryOptions = [
-  { label: '全部', value: '' },
+  { label: '全部分类', value: '' },
   ...Object.entries(CATEGORY_MAP).map(([value, label]) => ({ label, value })),
 ];
 
@@ -28,12 +34,13 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
+  const [status, setStatus] = useState('active');
   const [sort, setSort] = useState('newest');
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await itemsApi.list({ page, per_page: 20, search, category: category || undefined, sort, status: 'active' });
+      const res = await itemsApi.list({ page, per_page: 20, search, category: category || undefined, sort, status });
       setItems(res.data.items);
       setTotal(res.data.total);
     } catch {
@@ -41,7 +48,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, category, sort]);
+  }, [page, search, category, sort, status]);
 
   useEffect(() => {
     fetchItems();
@@ -50,7 +57,7 @@ export default function Home() {
   // Reset page on filter change
   useEffect(() => {
     setPage(1);
-  }, [search, category, sort]);
+  }, [search, category, sort, status]);
 
   const colSpan = screens.xl ? 6 : screens.lg ? 8 : screens.md ? 8 : screens.sm ? 12 : 24;
 
@@ -64,6 +71,13 @@ export default function Home() {
           allowClear
           onSearch={(v) => setSearch(v)}
           style={{ maxWidth: 300, flex: 1, minWidth: 200 }}
+        />
+        <Select
+          value={status}
+          onChange={setStatus}
+          options={statusOptions}
+          style={{ minWidth: 120 }}
+          placeholder="状态"
         />
         <Select
           value={category}

@@ -72,6 +72,12 @@ def list_items():
                 [AuctionItem.STATUS_ENDED_WON, AuctionItem.STATUS_ENDED_UNSOLD, AuctionItem.STATUS_COMPLETED]
             )
         )
+    elif status == "all":
+        query = query.filter(
+            AuctionItem.status.in_(
+                [AuctionItem.STATUS_ACTIVE, AuctionItem.STATUS_ENDED_WON, AuctionItem.STATUS_ENDED_UNSOLD, AuctionItem.STATUS_COMPLETED]
+            )
+        )
 
     # Filter by category
     if category and category in VALID_CATEGORIES:

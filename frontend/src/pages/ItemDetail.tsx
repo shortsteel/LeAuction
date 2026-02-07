@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Card, Row, Col, Typography, Tag, Image, Button, InputNumber, Divider,
   List, Avatar, Space, Descriptions, Alert, Spin, Grid, message, Modal,
 } from 'antd';
 import {
   UserOutlined, ClockCircleOutlined, DollarOutlined, FireOutlined,
-  CheckCircleOutlined, ExclamationCircleOutlined,
+  CheckCircleOutlined, ExclamationCircleOutlined, SyncOutlined,
 } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -32,6 +32,8 @@ export default function ItemDetail() {
   const [bidAmount, setBidAmount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [bidding, setBidding] = useState(false);
+  const [lastRefreshTime, setLastRefreshTime] = useState<string>('');
+  const bidAmountRef = useRef<number | null>(null);
 
   const isSeller = user && item && user.id === item.seller_id;
   const isWinner = user && item && user.id === item.winner_id;
@@ -65,6 +67,46 @@ export default function ItemDetail() {
   useEffect(() => {
     fetchItem();
   }, [fetchItem]);
+
+  // Keep bidAmount ref in sync with state for polling access
+  useEffect(() => {
+    bidAmountRef.current = bidAmount;
+  }, [bidAmount]);
+
+  // Poll for updates when item is active
+  const isActive = item?.status === 'active';
+  useEffect(() => {
+    if (!id || !isActive) return;
+
+    const poll = async () => {
+      try {
+        const [itemRes, bidsRes] = await Promise.all([
+          itemsApi.get(Number(id)),
+          bidsApi.list(Number(id)),
+        ]);
+        const newItem = itemRes.data.item;
+        setItem(newItem);
+        setBids(bidsRes.data.bids);
+        setLastRefreshTime(dayjs().format('HH:mm:ss'));
+
+        // Auto-fill bid amount if empty or below new minimum
+        if (newItem.status === 'active') {
+          const newMinBid = newItem.bid_count === 0
+            ? newItem.starting_price
+            : newItem.current_price + newItem.increment;
+          const currentBid = bidAmountRef.current;
+          if (currentBid === null || currentBid < newMinBid) {
+            setBidAmount(newMinBid);
+          }
+        }
+      } catch {
+        // silent
+      }
+    };
+
+    const timer = setInterval(poll, 10000);
+    return () => clearInterval(timer);
+  }, [id, isActive]);
 
   const handleBid = async () => {
     if (!bidAmount || !item) return;
@@ -301,7 +343,16 @@ export default function ItemDetail() {
       </Card>
 
       {/* Bid History */}
-      <Card title={`出价记录 (${bids.length})`} style={{ marginTop: 24 }}>
+      <Card
+        title={`出价记录 (${bids.length})`}
+        extra={lastRefreshTime && (
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            <SyncOutlined style={{ marginRight: 4 }} />
+            最后刷新 {lastRefreshTime}
+          </Text>
+        )}
+        style={{ marginTop: 24 }}
+      >
         <List
           dataSource={bids}
           locale={{ emptyText: '暂无出价' }}
