@@ -163,16 +163,39 @@ export default function ItemDetail() {
   const handleShare = async () => {
     if (!item) return;
     const url = window.location.href;
+
+    // 描述截断
+    const desc = item.description
+      ? item.description.length > 30
+        ? item.description.slice(0, 30) + '...'
+        : item.description
+      : '暂无描述';
+
+    // 结束时间
+    const endTimeText = item.end_time
+      ? item.status === 'active'
+        ? `结束时间: ${dayjs(item.end_time).format('YYYY-MM-DD HH:mm')}`
+        : `结拍时间: ${dayjs(item.end_time).format('YYYY-MM-DD HH:mm')}`
+      : '';
+
     const lines = [
-      `【${item.title}】`,
-      `${STATUS_MAP[item.status]} | ${CATEGORY_MAP[item.category]} | ${CONDITION_MAP[item.condition]}`,
-      `当前价: ¥${item.current_price.toFixed(2)}`,
-      item.buyout_price ? `一口价: ¥${item.buyout_price.toFixed(2)}` : '',
-      `出价次数: ${item.bid_count} 次`,
+      `🔨【${item.title}】`,
       '',
-      url,
+      `📋 ${STATUS_MAP[item.status]} | ${CATEGORY_MAP[item.category]} | ${CONDITION_MAP[item.condition]}`,
+      `📝 ${desc}`,
+      '',
+      `💰 当前价: ¥${item.current_price.toFixed(2)}`,
+      `🏷️ 起拍价: ¥${item.starting_price.toFixed(2)}`,
+      item.buyout_price ? `⚡ 一口价: ¥${item.buyout_price.toFixed(2)}` : '',
+      `📈 加价幅度: ¥${item.increment.toFixed(2)}`,
+      `🔥 出价次数: ${item.bid_count} 次`,
+      endTimeText ? `⏰ ${endTimeText}` : '',
+      item.seller?.nickname ? `👤 卖家: ${item.seller.nickname}` : '',
+      '',
+      `🔗 ${url}`,
     ].filter((line) => line !== '');
     const text = lines.join('\n');
+
     try {
       await navigator.clipboard.writeText(text);
       message.success('拍品信息已复制到剪贴板，快去分享吧');
