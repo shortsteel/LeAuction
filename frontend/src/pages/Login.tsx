@@ -30,7 +30,7 @@ export default function Login() {
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <Title level={2} style={{ marginBottom: 4 }}>🔨 乐拍</Title>
           <Text type="secondary">发现好物，乐在竞拍</Text>
-        </div>
+git        </div>
 
         <Form form={form} onFinish={onFinish} size="large">
           <Form.Item name="email" rules={[{ required: true, message: '请输入邮箱' }, { type: 'email', message: '请输入有效的邮箱地址' }]}>

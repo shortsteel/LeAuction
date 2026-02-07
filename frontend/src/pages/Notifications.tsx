@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { List, Badge, Button, Typography, Empty, Spin, Card, Tag, Space, message } from 'antd';
+import { List, Badge, Button, Typography, Empty, Spin, Card, Space, message } from 'antd';
 import {
   BellOutlined, DollarOutlined, TrophyOutlined,
   CloseCircleOutlined, CheckCircleOutlined,

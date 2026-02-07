@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Row, Col, Segmented, Empty, Spin, Button, Tag, Popconfirm, message, Grid } from 'antd';
+import { Row, Col, Segmented, Empty, Spin, Button, Popconfirm, message, Grid } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { AuctionItemCard } from '../types';
-import { STATUS_MAP } from '../types';
 import { itemsApi } from '../api/items';
 import ItemCard from '../components/ItemCard';
 
