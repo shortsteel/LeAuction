@@ -3,6 +3,13 @@ from datetime import datetime, timezone
 from app import db
 
 
+def ensure_utc(dt):
+    """确保 datetime 带有 UTC 时区信息。SQLite 读取时会丢失时区。"""
+    if dt is not None and dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
 class User(db.Model):
     __tablename__ = "users"
 

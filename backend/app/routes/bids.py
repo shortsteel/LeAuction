@@ -4,7 +4,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from app import db
-from app.models import AuctionItem, Bid, Notification, Transaction
+from app.models import AuctionItem, Bid, Notification, Transaction, ensure_utc
 
 bids_bp = Blueprint("bids", __name__)
 
@@ -29,7 +29,7 @@ def place_bid(item_id):
 
     # Check if auction has ended
     now = datetime.now(timezone.utc)
-    if item.end_time and now >= item.end_time:
+    if item.end_time and now >= ensure_utc(item.end_time):
         return jsonify({"errors": ["拍卖已结束"]}), 400
 
     try:
@@ -67,7 +67,7 @@ def place_bid(item_id):
     item.bid_count += 1
 
     # Anti-sniping: extend auction if bid placed within last 5 minutes
-    if item.end_time and (item.end_time - now) <= timedelta(minutes=ANTI_SNIPE_MINUTES):
+    if item.end_time and (ensure_utc(item.end_time) - now) <= timedelta(minutes=ANTI_SNIPE_MINUTES):
         item.end_time = now + timedelta(minutes=ANTI_SNIPE_MINUTES)
 
     # Handle buyout
