@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Card, Row, Col, Typography, Tag, Image, Button, InputNumber, Divider,
   List, Avatar, Space, Descriptions, Alert, Spin, Grid, message, Modal, Input,
@@ -35,7 +35,6 @@ export default function ItemDetail() {
   const [loading, setLoading] = useState(true);
   const [bidding, setBidding] = useState(false);
   const [lastRefreshTime, setLastRefreshTime] = useState<string>('');
-  const bidAmountRef = useRef<number | null>(null);
   const [comments, setComments] = useState<CommentType[]>([]);
   const [commentContent, setCommentContent] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
@@ -74,11 +73,6 @@ export default function ItemDetail() {
     fetchItem();
   }, [fetchItem]);
 
-  // Keep bidAmount ref in sync with state for polling access
-  useEffect(() => {
-    bidAmountRef.current = bidAmount;
-  }, [bidAmount]);
-
   // Poll for updates when item is active
   const isActive = item?.status === 'active';
   useEffect(() => {
@@ -97,17 +91,6 @@ export default function ItemDetail() {
         setComments(commentsRes.data.comments);
         setCommentsTotal(commentsRes.data.total);
         setLastRefreshTime(dayjs().format('HH:mm:ss'));
-
-        // Auto-fill bid amount if empty or below new minimum
-        if (newItem.status === 'active') {
-          const newMinBid = newItem.bid_count === 0
-            ? newItem.starting_price
-            : newItem.current_price + newItem.increment;
-          const currentBid = bidAmountRef.current;
-          if (currentBid === null || currentBid < newMinBid) {
-            setBidAmount(newMinBid);
-          }
-        }
       } catch {
         // silent
       }
