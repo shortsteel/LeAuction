@@ -205,13 +205,26 @@ def publish_item(item_id):
         return jsonify({"errors": ["请至少上传一张图片"]}), 400
 
     data = request.get_json() or {}
+    duration_hours = data.get("duration_hours")
     duration_days = data.get("duration_days", 3)
-    if duration_days not in [1, 3, 5, 7]:
-        return jsonify({"errors": ["拍卖时长只能选择 1/3/5/7 天"]}), 400
+
+    if duration_hours is not None:
+        # 自定义时长（小时），最少1小时，最多7天
+        try:
+            duration_hours = float(duration_hours)
+            if duration_hours < 1 or duration_hours > 168:
+                return jsonify({"errors": ["自定义拍卖时长需在 1 小时到 7 天之间"]}), 400
+        except (ValueError, TypeError):
+            return jsonify({"errors": ["拍卖时长格式错误"]}), 400
+        duration = timedelta(hours=duration_hours)
+    else:
+        if duration_days not in [1, 3, 5, 7]:
+            return jsonify({"errors": ["拍卖时长只能选择 1/3/5/7 天"]}), 400
+        duration = timedelta(days=duration_days)
 
     now = datetime.now(timezone.utc)
     item.start_time = now
-    item.end_time = now + timedelta(days=duration_days)
+    item.end_time = now + duration
     item.status = AuctionItem.STATUS_ACTIVE
     # Reset for re-listing
     if item.bid_count > 0 and item.status == AuctionItem.STATUS_ENDED_UNSOLD:

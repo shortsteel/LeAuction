@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   Form, Input, InputNumber, Select, Upload, Button, Card, Typography,
-  Space, message, Modal, Radio,
+  Space, message, Modal, Radio, Divider,
 } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -98,7 +98,7 @@ export default function PublishItem() {
     }
   };
 
-  const handlePublish = async (durationDays: number) => {
+  const handlePublish = async (duration: { duration_days?: number; duration_hours?: number }) => {
     try {
       const values = await form.validateFields();
       const imageUrls = getImageUrls();
@@ -119,7 +119,7 @@ export default function PublishItem() {
         itemId = res.data.item.id;
       }
 
-      await itemsApi.publish(itemId!, durationDays);
+      await itemsApi.publish(itemId!, duration);
       message.success('发布成功！');
       navigate(`/items/${itemId}`);
     } catch {
@@ -226,18 +226,67 @@ export default function PublishItem() {
   );
 }
 
-function DurationPicker({ onConfirm, loading }: { onConfirm: (days: number) => void; loading: boolean }) {
+function DurationPicker({ onConfirm, loading }: { onConfirm: (duration: { duration_days?: number; duration_hours?: number }) => void; loading: boolean }) {
+  const [mode, setMode] = useState<'preset' | 'custom'>('preset');
   const [days, setDays] = useState(3);
+  const [customHours, setCustomHours] = useState<number | null>(null);
+
+  const handleConfirm = () => {
+    if (mode === 'custom') {
+      if (!customHours || customHours < 1 || customHours > 168) {
+        return;
+      }
+      onConfirm({ duration_hours: customHours });
+    } else {
+      onConfirm({ duration_days: days });
+    }
+  };
 
   return (
-    <Space direction="vertical" style={{ width: '100%' }} size="large">
-      <Radio.Group value={days} onChange={(e) => setDays(e.target.value)} optionType="button" buttonStyle="solid">
-        <Radio.Button value={1}>1 天</Radio.Button>
-        <Radio.Button value={3}>3 天</Radio.Button>
-        <Radio.Button value={5}>5 天</Radio.Button>
-        <Radio.Button value={7}>7 天</Radio.Button>
+    <Space direction="vertical" style={{ width: '100%' }} size="middle">
+      <Radio.Group value={mode} onChange={(e) => setMode(e.target.value)}>
+        <Radio value="preset">预设时长</Radio>
+        <Radio value="custom">自定义时长</Radio>
       </Radio.Group>
-      <Button type="primary" block onClick={() => onConfirm(days)} loading={loading}>
+
+      {mode === 'preset' ? (
+        <Radio.Group value={days} onChange={(e) => setDays(e.target.value)} optionType="button" buttonStyle="solid">
+          <Radio.Button value={1}>1 天</Radio.Button>
+          <Radio.Button value={3}>3 天</Radio.Button>
+          <Radio.Button value={5}>5 天</Radio.Button>
+          <Radio.Button value={7}>7 天</Radio.Button>
+        </Radio.Group>
+      ) : (
+        <div>
+          <Space align="center">
+            <InputNumber
+              min={1}
+              max={168}
+              value={customHours}
+              onChange={(v) => setCustomHours(v)}
+              placeholder="输入小时数"
+              style={{ width: 140 }}
+              addonAfter="小时"
+            />
+          </Space>
+          <div style={{ marginTop: 8, color: '#999', fontSize: 12 }}>
+            最少 1 小时，最多 168 小时（7 天）
+            {customHours && customHours >= 24 && (
+              <span>，约 {(customHours / 24).toFixed(1)} 天</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      <Divider style={{ margin: '8px 0' }} />
+
+      <Button
+        type="primary"
+        block
+        onClick={handleConfirm}
+        loading={loading}
+        disabled={mode === 'custom' && (!customHours || customHours < 1 || customHours > 168)}
+      >
         确认发布
       </Button>
     </Space>

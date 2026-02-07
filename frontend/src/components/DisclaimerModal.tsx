@@ -6,19 +6,36 @@ const { Paragraph, Text } = Typography;
 
 const DISCLAIMER_ACCEPTED_KEY = 'disclaimer_accepted';
 
-export default function DisclaimerModal() {
-  const [open, setOpen] = useState(false);
+interface DisclaimerModalProps {
+  /** 外部控制打开状态（可选，不传则使用自动弹出逻辑） */
+  externalOpen?: boolean;
+  /** 外部关闭回调 */
+  onClose?: () => void;
+}
 
+export default function DisclaimerModal({ externalOpen, onClose }: DisclaimerModalProps) {
+  const [autoOpen, setAutoOpen] = useState(false);
+
+  // 首次访问自动弹出
   useEffect(() => {
-    const accepted = sessionStorage.getItem(DISCLAIMER_ACCEPTED_KEY);
-    if (!accepted) {
-      setOpen(true);
+    if (externalOpen === undefined) {
+      const accepted = sessionStorage.getItem(DISCLAIMER_ACCEPTED_KEY);
+      if (!accepted) {
+        setAutoOpen(true);
+      }
     }
-  }, []);
+  }, [externalOpen]);
+
+  const isControlled = externalOpen !== undefined;
+  const open = isControlled ? externalOpen : autoOpen;
 
   const handleOk = () => {
     sessionStorage.setItem(DISCLAIMER_ACCEPTED_KEY, 'true');
-    setOpen(false);
+    if (isControlled) {
+      onClose?.();
+    } else {
+      setAutoOpen(false);
+    }
   };
 
   return (
@@ -31,10 +48,12 @@ export default function DisclaimerModal() {
       }
       open={open}
       onOk={handleOk}
+      onCancel={isControlled ? onClose : undefined}
       okText="我已知晓并同意"
-      cancelButtonProps={{ style: { display: 'none' } }}
-      closable={false}
-      maskClosable={false}
+      cancelButtonProps={{ style: { display: isControlled ? undefined : 'none' } }}
+      cancelText="关闭"
+      closable={isControlled}
+      maskClosable={isControlled}
       centered
     >
       <Typography style={{ marginTop: 12 }}>

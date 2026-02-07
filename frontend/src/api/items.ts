@@ -35,8 +35,8 @@ export const itemsApi = {
   update: (id: number, data: Partial<CreateItemData>) =>
     client.put<{ item: AuctionItemDetail }>(`/items/${id}`, data),
 
-  publish: (id: number, duration_days: number) =>
-    client.post<{ item: AuctionItemDetail }>(`/items/${id}/publish`, { duration_days }),
+  publish: (id: number, duration: { duration_days?: number; duration_hours?: number }) =>
+    client.post<{ item: AuctionItemDetail }>(`/items/${id}/publish`, duration),
 
   cancel: (id: number) =>
     client.post<{ item: AuctionItemDetail }>(`/items/${id}/cancel`),

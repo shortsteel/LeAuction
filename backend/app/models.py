@@ -12,7 +12,7 @@ class User(db.Model):
     nickname = db.Column(db.String(20), nullable=False)
     avatar_url = db.Column(db.String(256), default="")
     created_at = db.Column(
-        db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+        db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
     )
 
     # Relationships
@@ -70,15 +70,15 @@ class AuctionItem(db.Model):
     buyout_price = db.Column(db.Float, nullable=True)  # 一口价
     current_price = db.Column(db.Float, nullable=False)  # 当前最高价
     bid_count = db.Column(db.Integer, default=0)
-    start_time = db.Column(db.DateTime, nullable=True)
-    end_time = db.Column(db.DateTime, nullable=True)
+    start_time = db.Column(db.DateTime(timezone=True), nullable=True)
+    end_time = db.Column(db.DateTime(timezone=True), nullable=True)
     status = db.Column(db.String(20), default=STATUS_DRAFT, index=True)
     winner_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     created_at = db.Column(
-        db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+        db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
     )
     updated_at = db.Column(
-        db.DateTime,
+        db.DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
         nullable=False,
@@ -180,7 +180,7 @@ class Bid(db.Model):
     )
     amount = db.Column(db.Float, nullable=False)
     created_at = db.Column(
-        db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+        db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
     )
 
     def to_dict(self):
@@ -215,7 +215,7 @@ class Notification(db.Model):
     related_item_id = db.Column(db.Integer, db.ForeignKey("auction_items.id"), nullable=True)
     is_read = db.Column(db.Boolean, default=False, index=True)
     created_at = db.Column(
-        db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+        db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
     )
 
     def to_dict(self):
@@ -243,9 +243,9 @@ class Transaction(db.Model):
     seller_confirmed = db.Column(db.Boolean, default=False)
     buyer_confirmed = db.Column(db.Boolean, default=False)
     created_at = db.Column(
-        db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+        db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
     )
-    completed_at = db.Column(db.DateTime, nullable=True)
+    completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
     # Relationships
     item = db.relationship("AuctionItem", backref=db.backref("transaction", uselist=False))

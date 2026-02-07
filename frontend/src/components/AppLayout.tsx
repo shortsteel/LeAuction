@@ -14,9 +14,10 @@ import {
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext';
 import { notificationsApi } from '../api/notifications';
+import DisclaimerModal from './DisclaimerModal';
 
 const DISCLAIMER_BANNER =
-  '本平台仅提供信息展示和竞拍撮合服务，请诚信交易。交易过程中的任何纠纷由买卖双方自行协商解决，平台不承担任何责任。';
+  '本平台仅提供信息展示和竞拍撮合服务，请诚信交易。点击查看完整免责声明 →';
 
 const { Header, Content } = Layout;
 const { useBreakpoint } = Grid;
@@ -38,6 +39,7 @@ export default function AppLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [bannerVisible, setBannerVisible] = useState(true);
+  const [disclaimerOpen, setDisclaimerOpen] = useState(false);
 
   const fetchUnread = useCallback(() => {
     if (user) {
@@ -81,7 +83,14 @@ export default function AppLayout() {
     <Layout style={{ minHeight: '100vh' }}>
       {bannerVisible && (
         <Alert
-          message={DISCLAIMER_BANNER}
+          message={
+            <span
+              onClick={() => setDisclaimerOpen(true)}
+              style={{ cursor: 'pointer' }}
+            >
+              {DISCLAIMER_BANNER}
+            </span>
+          }
           type="warning"
           banner
           closable
@@ -89,6 +98,7 @@ export default function AppLayout() {
           style={{ textAlign: 'center' }}
         />
       )}
+      <DisclaimerModal externalOpen={disclaimerOpen} onClose={() => setDisclaimerOpen(false)} />
       <Header
         style={{
           display: 'flex',
