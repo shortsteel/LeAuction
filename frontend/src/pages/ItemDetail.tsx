@@ -86,13 +86,16 @@ export default function ItemDetail() {
 
     const poll = async () => {
       try {
-        const [itemRes, bidsRes] = await Promise.all([
+        const [itemRes, bidsRes, commentsRes] = await Promise.all([
           itemsApi.get(Number(id)),
           bidsApi.list(Number(id)),
+          commentsApi.list(Number(id)),
         ]);
         const newItem = itemRes.data.item;
         setItem(newItem);
         setBids(bidsRes.data.bids);
+        setComments(commentsRes.data.comments);
+        setCommentsTotal(commentsRes.data.total);
         setLastRefreshTime(dayjs().format('HH:mm:ss'));
 
         // Auto-fill bid amount if empty or below new minimum
@@ -110,7 +113,7 @@ export default function ItemDetail() {
       }
     };
 
-    const timer = setInterval(poll, 10000);
+    const timer = setInterval(poll, 5000);
     return () => clearInterval(timer);
   }, [id, isActive]);
 
@@ -470,6 +473,12 @@ export default function ItemDetail() {
       {/* Comments Section */}
       <Card
         title={<><MessageOutlined style={{ marginRight: 8 }} />留言 ({commentsTotal})</>}
+        extra={lastRefreshTime && (
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            <SyncOutlined style={{ marginRight: 4 }} />
+            最后刷新 {lastRefreshTime}
+          </Text>
+        )}
         style={{ marginTop: 24 }}
       >
         {/* Comment Input */}
