@@ -4,7 +4,15 @@ import { ExclamationCircleOutlined } from '@ant-design/icons';
 
 const { Paragraph, Text } = Typography;
 
-const DISCLAIMER_ACCEPTED_KEY = 'disclaimer_accepted';
+const DISCLAIMER_ACCEPTED_KEY = 'disclaimer_accepted_at';
+const DISCLAIMER_EXPIRE_MS = 24 * 60 * 60 * 1000; // 24 小时过期
+
+/** 检查免责声明是否已接受且未过期 */
+function isDisclaimerValid() {
+  const acceptedAt = localStorage.getItem(DISCLAIMER_ACCEPTED_KEY);
+  if (!acceptedAt) return false;
+  return Date.now() - Number(acceptedAt) < DISCLAIMER_EXPIRE_MS;
+}
 
 interface DisclaimerModalProps {
   /** 外部控制打开状态（可选，不传则使用自动弹出逻辑） */
@@ -16,26 +24,28 @@ interface DisclaimerModalProps {
 export default function DisclaimerModal({ externalOpen, onClose }: DisclaimerModalProps) {
   const [autoOpen, setAutoOpen] = useState(false);
 
-  // 首次访问自动弹出
+  // 首次访问自动弹出（无论是否受控模式，始终检查 localStorage）
   useEffect(() => {
-    if (externalOpen === undefined) {
-      const accepted = sessionStorage.getItem(DISCLAIMER_ACCEPTED_KEY);
-      if (!accepted) {
-        setAutoOpen(true);
-      }
+    if (!isDisclaimerValid()) {
+      setAutoOpen(true);
     }
-  }, [externalOpen]);
+  }, []);
 
-  const isControlled = externalOpen !== undefined;
-  const open = isControlled ? externalOpen : autoOpen;
+  // 两种打开方式取并集：自动弹出 或 外部控制
+  const open = autoOpen || (externalOpen ?? false);
 
   const handleOk = () => {
-    sessionStorage.setItem(DISCLAIMER_ACCEPTED_KEY, 'true');
-    if (isControlled) {
+    localStorage.setItem(DISCLAIMER_ACCEPTED_KEY, String(Date.now()));
+    setAutoOpen(false);
+    onClose?.();
+  };
+
+  const handleCancel = () => {
+    if (!autoOpen) {
+      // 已接受过免责声明后，通过 banner 手动打开的可以关闭
       onClose?.();
-    } else {
-      setAutoOpen(false);
     }
+    // autoOpen 模式下不允许关闭，必须点击同意
   };
 
   return (
@@ -48,12 +58,12 @@ export default function DisclaimerModal({ externalOpen, onClose }: DisclaimerMod
       }
       open={open}
       onOk={handleOk}
-      onCancel={isControlled ? onClose : undefined}
+      onCancel={handleCancel}
       okText="我已知晓并同意"
-      cancelButtonProps={{ style: { display: isControlled ? undefined : 'none' } }}
+      cancelButtonProps={{ style: { display: autoOpen ? 'none' : undefined } }}
       cancelText="关闭"
-      closable={isControlled}
-      maskClosable={isControlled}
+      closable={!autoOpen}
+      maskClosable={!autoOpen}
       centered
     >
       <Typography style={{ marginTop: 12 }}>
