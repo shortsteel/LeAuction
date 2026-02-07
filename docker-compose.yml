@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-le-auction-production-secret}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-le-auction-jwt-production}
+      - DATABASE_URL=sqlite:///leauction.db
+    volumes:
+      - ./data:/app/uploads
+      - ./db:/app/instance
+    restart: unless-stopped
