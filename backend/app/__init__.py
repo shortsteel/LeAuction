@@ -13,7 +13,7 @@ STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file
 
 
 def create_app():
-    app = Flask(__name__, static_folder=STATIC_DIR, static_url_path="")
+    app = Flask(__name__, static_folder=None)
     app.config.from_object("config.Config")
 
     # Ensure upload folder exists
