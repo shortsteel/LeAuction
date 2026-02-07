@@ -37,7 +37,11 @@ export default function Register() {
             <Input prefix={<MailOutlined />} placeholder="邮箱" />
           </Form.Item>
 
-          <Form.Item name="nickname" rules={[{ required: true, message: '请输入昵称' }, { min: 2, max: 20, message: '昵称需要2-20个字符' }]}>
+          <Form.Item
+            name="nickname"
+            rules={[{ required: true, message: '请输入昵称' }, { min: 2, max: 20, message: '昵称需要2-20个字符' }]}
+            extra="建议使用微信群昵称、微信号、微信昵称或真实姓名，方便交易时互相联系"
+          >
             <Input prefix={<UserOutlined />} placeholder="昵称" />
           </Form.Item>
 
