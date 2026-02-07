@@ -237,6 +237,36 @@ class Notification(db.Model):
         }
 
 
+class Comment(db.Model):
+    __tablename__ = "comments"
+
+    id = db.Column(db.Integer, primary_key=True)
+    item_id = db.Column(
+        db.Integer, db.ForeignKey("auction_items.id"), nullable=False, index=True
+    )
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=False, index=True
+    )
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(
+        db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+
+    # Relationships
+    user = db.relationship("User", foreign_keys=[user_id])
+    item = db.relationship("AuctionItem", foreign_keys=[item_id])
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "item_id": self.item_id,
+            "user_id": self.user_id,
+            "user": self.user.to_public_dict() if self.user else None,
+            "content": self.content,
+            "created_at": ensure_utc(self.created_at).isoformat(),
+        }
+
+
 class Transaction(db.Model):
     __tablename__ = "transactions"
 

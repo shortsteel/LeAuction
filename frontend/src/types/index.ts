@@ -95,6 +95,15 @@ export interface Transaction {
   completed_at: string | null;
 }
 
+export interface Comment {
+  id: number;
+  item_id: number;
+  user_id: number;
+  user: PublicUser | null;
+  content: string;
+  created_at: string;
+}
+
 export interface PaginatedResponse<T> {
   items: T[];
   total: number;

@@ -206,10 +206,6 @@ def publish_item(item_id):
     if item.status != AuctionItem.STATUS_DRAFT and item.status != AuctionItem.STATUS_ENDED_UNSOLD:
         return jsonify({"errors": ["只有草稿或流拍的拍品可以上架"]}), 400
 
-    # Validate has images
-    if item.images.count() == 0:
-        return jsonify({"errors": ["请至少上传一张图片"]}), 400
-
     data = request.get_json() or {}
     duration_hours = data.get("duration_hours")
     duration_days = data.get("duration_days", 3)

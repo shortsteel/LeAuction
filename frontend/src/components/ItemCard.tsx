@@ -1,5 +1,5 @@
 import { Card, Tag, Typography, Space, Avatar } from 'antd';
-import { FireOutlined, UserOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { FireOutlined, UserOutlined, ClockCircleOutlined, PictureOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { AuctionItemCard } from '../types';
 import { CATEGORY_MAP, CONDITION_MAP, STATUS_MAP, STATUS_COLOR } from '../types';
@@ -28,7 +28,10 @@ export default function ItemCard({ item, extra }: ItemCardProps) {
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           ) : (
-            <Text type="secondary">暂无图片</Text>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+              <PictureOutlined style={{ fontSize: 40, color: '#d9d9d9' }} />
+              <Text type="secondary" style={{ fontSize: 12 }}>暂无图片</Text>
+            </div>
           )}
           {/* 状态角标 */}
           {item.status !== 'active' && (

@@ -31,6 +31,7 @@ def create_app():
     from app.routes.notifications import notifications_bp
     from app.routes.transactions import transactions_bp
     from app.routes.upload import upload_bp
+    from app.routes.comments import comments_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(items_bp, url_prefix="/api/items")
@@ -38,6 +39,7 @@ def create_app():
     app.register_blueprint(notifications_bp, url_prefix="/api/notifications")
     app.register_blueprint(transactions_bp, url_prefix="/api/transactions")
     app.register_blueprint(upload_bp, url_prefix="/api/upload")
+    app.register_blueprint(comments_bp, url_prefix="/api/items")
 
     # Serve uploaded files
     @app.route("/uploads/<path:filename>")

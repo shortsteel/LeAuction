@@ -103,11 +103,6 @@ export default function PublishItem() {
       const values = await form.validateFields();
       const imageUrls = getImageUrls();
 
-      if (imageUrls.length === 0) {
-        message.error('请至少上传一张图片');
-        return;
-      }
-
       setSubmitting(true);
       const data = { ...values, image_urls: imageUrls };
 
@@ -144,7 +139,7 @@ export default function PublishItem() {
             <TextArea placeholder="请描述物品详情、使用情况等" maxLength={2000} showCount rows={4} />
           </Form.Item>
 
-          <Form.Item label="图片（至少1张，最多5张）" required>
+          <Form.Item label="图片（最多5张，选填）">
             <Upload
               listType="picture-card"
               fileList={fileList}

@@ -1,19 +1,21 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Card, Row, Col, Typography, Tag, Image, Button, InputNumber, Divider,
-  List, Avatar, Space, Descriptions, Alert, Spin, Grid, message, Modal,
+  List, Avatar, Space, Descriptions, Alert, Spin, Grid, message, Modal, Input,
 } from 'antd';
 import {
   UserOutlined, ClockCircleOutlined, DollarOutlined, FireOutlined,
   CheckCircleOutlined, ExclamationCircleOutlined, SyncOutlined, ShareAltOutlined,
+  MessageOutlined, SendOutlined, PictureOutlined,
 } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
-import type { AuctionItemDetail, Bid as BidType, Transaction } from '../types';
+import type { AuctionItemDetail, Bid as BidType, Transaction, Comment as CommentType } from '../types';
 import { CATEGORY_MAP, CONDITION_MAP, STATUS_MAP, STATUS_COLOR } from '../types';
 import { itemsApi } from '../api/items';
 import { bidsApi } from '../api/bids';
 import { transactionsApi } from '../api/transactions';
+import { commentsApi } from '../api/comments';
 import { useAuth } from '../store/AuthContext';
 import CountDown from '../components/CountDown';
 
@@ -34,6 +36,10 @@ export default function ItemDetail() {
   const [bidding, setBidding] = useState(false);
   const [lastRefreshTime, setLastRefreshTime] = useState<string>('');
   const bidAmountRef = useRef<number | null>(null);
+  const [comments, setComments] = useState<CommentType[]>([]);
+  const [commentContent, setCommentContent] = useState('');
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const [commentsTotal, setCommentsTotal] = useState(0);
 
   const isSeller = user && item && user.id === item.seller_id;
   const isWinner = user && item && user.id === item.winner_id;
@@ -160,6 +166,38 @@ export default function ItemDetail() {
     }
   };
 
+  // Fetch comments
+  const fetchComments = useCallback(async () => {
+    if (!id) return;
+    try {
+      const res = await commentsApi.list(Number(id));
+      setComments(res.data.comments);
+      setCommentsTotal(res.data.total);
+    } catch {
+      // silent
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchComments();
+  }, [fetchComments]);
+
+  const handleSubmitComment = async () => {
+    if (!commentContent.trim()) return;
+    setSubmittingComment(true);
+    try {
+      const res = await commentsApi.create(Number(id), commentContent.trim());
+      setComments((prev) => [res.data.comment, ...prev]);
+      setCommentsTotal((prev) => prev + 1);
+      setCommentContent('');
+      message.success('留言成功');
+    } catch {
+      // handled by interceptor
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
   const handleShare = async () => {
     if (!item) return;
     const url = window.location.href;
@@ -245,8 +283,9 @@ export default function ItemDetail() {
                 </div>
               </Image.PreviewGroup>
             ) : (
-              <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Text type="secondary">暂无图片</Text>
+              <div style={{ height: 300, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5' }}>
+                <PictureOutlined style={{ fontSize: 64, color: '#d9d9d9' }} />
+                <Text type="secondary" style={{ marginTop: 8 }}>暂无图片</Text>
               </div>
             )}
           </Card>
@@ -422,6 +461,73 @@ export default function ItemDetail() {
                   </Space>
                 }
                 description={dayjs(bid.created_at).format('YYYY-MM-DD HH:mm:ss')}
+              />
+            </List.Item>
+          )}
+        />
+      </Card>
+
+      {/* Comments Section */}
+      <Card
+        title={<><MessageOutlined style={{ marginRight: 8 }} />留言 ({commentsTotal})</>}
+        style={{ marginTop: 24 }}
+      >
+        {/* Comment Input */}
+        {user && item.status !== 'draft' ? (
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+            <Avatar src={user.avatar_url || undefined} icon={<UserOutlined />} />
+            <Input.TextArea
+              value={commentContent}
+              onChange={(e) => setCommentContent(e.target.value)}
+              placeholder="写下你的留言..."
+              maxLength={500}
+              showCount
+              autoSize={{ minRows: 2, maxRows: 4 }}
+              style={{ flex: 1 }}
+            />
+            <Button
+              type="primary"
+              icon={<SendOutlined />}
+              onClick={handleSubmitComment}
+              loading={submittingComment}
+              disabled={!commentContent.trim()}
+              style={{ alignSelf: 'flex-end' }}
+            >
+              发送
+            </Button>
+          </div>
+        ) : !user ? (
+          <div style={{ textAlign: 'center', padding: '12px 0', marginBottom: 16 }}>
+            <Button type="link" onClick={() => navigate('/login')}>登录后留言</Button>
+          </div>
+        ) : null}
+
+        {/* Comment List */}
+        <List
+          dataSource={comments}
+          locale={{ emptyText: '暂无留言，来说点什么吧' }}
+          renderItem={(comment) => (
+            <List.Item>
+              <List.Item.Meta
+                avatar={<Avatar src={comment.user?.avatar_url || undefined} icon={<UserOutlined />} />}
+                title={
+                  <Space>
+                    <span>{comment.user?.nickname}</span>
+                    {item.seller_id === comment.user_id && (
+                      <Tag color="orange" style={{ fontSize: 11 }}>卖家</Tag>
+                    )}
+                  </Space>
+                }
+                description={
+                  <div>
+                    <Paragraph style={{ whiteSpace: 'pre-wrap', marginBottom: 4 }}>
+                      {comment.content}
+                    </Paragraph>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      {dayjs(comment.created_at).format('YYYY-MM-DD HH:mm:ss')}
+                    </Text>
+                  </div>
+                }
               />
             </List.Item>
           )}
