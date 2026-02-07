@@ -2,3 +2,4 @@
 /backend/uploads/
 /backend/venv/
 /.idea
+__pycache__
