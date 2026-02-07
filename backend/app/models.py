@@ -33,7 +33,7 @@ class User(db.Model):
             "email": self.email,
             "nickname": self.nickname,
             "avatar_url": self.avatar_url,
-            "created_at": self.created_at.isoformat(),
+            "created_at": ensure_utc(self.created_at).isoformat(),
         }
 
     def to_public_dict(self):
@@ -114,13 +114,13 @@ class AuctionItem(db.Model):
             "buyout_price": self.buyout_price,
             "current_price": self.current_price,
             "bid_count": self.bid_count,
-            "start_time": self.start_time.isoformat() if self.start_time else None,
-            "end_time": self.end_time.isoformat() if self.end_time else None,
+            "start_time": ensure_utc(self.start_time).isoformat() if self.start_time else None,
+            "end_time": ensure_utc(self.end_time).isoformat() if self.end_time else None,
             "status": self.status,
             "winner_id": self.winner_id,
             "images": [img.to_dict() for img in self.images.order_by(ItemImage.sort_order)],
-            "created_at": self.created_at.isoformat(),
-            "updated_at": self.updated_at.isoformat(),
+            "created_at": ensure_utc(self.created_at).isoformat(),
+            "updated_at": ensure_utc(self.updated_at).isoformat(),
         }
         # Reserve price is only visible to the seller
         if include_reserve:
@@ -148,7 +148,7 @@ class AuctionItem(db.Model):
             "starting_price": self.starting_price,
             "buyout_price": self.buyout_price,
             "bid_count": self.bid_count,
-            "end_time": self.end_time.isoformat() if self.end_time else None,
+            "end_time": ensure_utc(self.end_time).isoformat() if self.end_time else None,
             "status": self.status,
             "image_url": first_image.image_url if first_image else None,
             "seller": self.seller.to_public_dict() if self.seller else None,
@@ -197,7 +197,7 @@ class Bid(db.Model):
             "bidder_id": self.bidder_id,
             "bidder": self.bidder.to_public_dict() if self.bidder else None,
             "amount": self.amount,
-            "created_at": self.created_at.isoformat(),
+            "created_at": ensure_utc(self.created_at).isoformat(),
         }
 
 
@@ -233,7 +233,7 @@ class Notification(db.Model):
             "content": self.content,
             "related_item_id": self.related_item_id,
             "is_read": self.is_read,
-            "created_at": self.created_at.isoformat(),
+            "created_at": ensure_utc(self.created_at).isoformat(),
         }
 
 
@@ -268,6 +268,6 @@ class Transaction(db.Model):
             "final_price": self.final_price,
             "seller_confirmed": self.seller_confirmed,
             "buyer_confirmed": self.buyer_confirmed,
-            "created_at": self.created_at.isoformat(),
-            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "created_at": ensure_utc(self.created_at).isoformat(),
+            "completed_at": ensure_utc(self.completed_at).isoformat() if self.completed_at else None,
         }
