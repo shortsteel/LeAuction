@@ -33,6 +33,11 @@ client.interceptors.response.use(
       if (!isPublicPage && !isAuthPage) {
         window.location.href = '/login';
       }
+      // 在登录/注册页面显示具体错误信息（如密码错误、账号不存在等）
+      if (isAuthPage) {
+        const errorMsg = data?.errors?.[0] || data?.message || '登录失败，请检查邮箱和密码';
+        message.error(errorMsg);
+      }
       return Promise.reject(error);
     }
 
