@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
@@ -8,9 +8,12 @@ from flask_jwt_extended import JWTManager
 db = SQLAlchemy()
 jwt = JWTManager()
 
+# Docker 构建时前端产物会被复制到此目录
+STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static")
+
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder=STATIC_DIR, static_url_path="")
     app.config.from_object("config.Config")
 
     # Ensure upload folder exists
@@ -35,6 +38,21 @@ def create_app():
     app.register_blueprint(notifications_bp, url_prefix="/api/notifications")
     app.register_blueprint(transactions_bp, url_prefix="/api/transactions")
     app.register_blueprint(upload_bp, url_prefix="/api/upload")
+
+    # Serve uploaded files
+    @app.route("/uploads/<path:filename>")
+    def uploaded_file(filename):
+        return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
+
+    # SPA fallback: non-API routes all return index.html
+    @app.route("/", defaults={"path": ""})
+    @app.route("/<path:path>")
+    def serve_frontend(path):
+        # If the requested file exists in static dir, serve it directly
+        if path and os.path.exists(os.path.join(STATIC_DIR, path)):
+            return send_from_directory(STATIC_DIR, path)
+        # Otherwise serve index.html for SPA client-side routing
+        return send_from_directory(STATIC_DIR, "index.html")
 
     # Create tables
     with app.app_context():
