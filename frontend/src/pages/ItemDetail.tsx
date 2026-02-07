@@ -5,7 +5,7 @@ import {
 } from 'antd';
 import {
   UserOutlined, ClockCircleOutlined, DollarOutlined, FireOutlined,
-  CheckCircleOutlined, ExclamationCircleOutlined, SyncOutlined,
+  CheckCircleOutlined, ExclamationCircleOutlined, SyncOutlined, ShareAltOutlined,
 } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -160,6 +160,27 @@ export default function ItemDetail() {
     }
   };
 
+  const handleShare = async () => {
+    if (!item) return;
+    const url = window.location.href;
+    const lines = [
+      `【${item.title}】`,
+      `${STATUS_MAP[item.status]} | ${CATEGORY_MAP[item.category]} | ${CONDITION_MAP[item.condition]}`,
+      `当前价: ¥${item.current_price.toFixed(2)}`,
+      item.buyout_price ? `一口价: ¥${item.buyout_price.toFixed(2)}` : '',
+      `出价次数: ${item.bid_count} 次`,
+      '',
+      url,
+    ].filter((line) => line !== '');
+    const text = lines.join('\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      message.success('拍品信息已复制到剪贴板，快去分享吧');
+    } catch {
+      message.error('复制失败，请手动复制');
+    }
+  };
+
   if (loading) {
     return <div style={{ textAlign: 'center', marginTop: 80 }}><Spin size="large" /></div>;
   }
@@ -218,7 +239,17 @@ export default function ItemDetail() {
                 <Tag>{CONDITION_MAP[item.condition]}</Tag>
               </div>
 
-              <Title level={3} style={{ margin: 0 }}>{item.title}</Title>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                <Title level={3} style={{ margin: 0 }}>{item.title}</Title>
+                <Button
+                  type="text"
+                  icon={<ShareAltOutlined />}
+                  onClick={handleShare}
+                  style={{ flexShrink: 0, fontSize: 16 }}
+                >
+                  分享
+                </Button>
+              </div>
 
               {/* Price Section */}
               <Card size="small" style={{ background: '#fafafa' }}>
