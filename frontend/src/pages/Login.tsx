@@ -3,6 +3,7 @@ import { MailOutlined, LockOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext';
 import { authApi } from '../api/auth';
+import DisclaimerModal from '../components/DisclaimerModal';
 
 const { Title, Text } = Typography;
 
@@ -24,6 +25,7 @@ export default function Login() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f2f5', padding: 16 }}>
+      <DisclaimerModal />
       <Card style={{ width: '100%', maxWidth: 400 }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <Title level={2} style={{ marginBottom: 4 }}>🔨 乐拍</Title>

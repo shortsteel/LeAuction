@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Layout, Menu, Badge, Avatar, Dropdown, Button, Drawer, Grid } from 'antd';
+import { Layout, Menu, Badge, Avatar, Dropdown, Button, Drawer, Grid, Alert } from 'antd';
 import {
   HomeOutlined,
   PlusOutlined,
@@ -14,6 +14,9 @@ import {
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext';
 import { notificationsApi } from '../api/notifications';
+
+const DISCLAIMER_BANNER =
+  '本平台仅提供信息展示和竞拍撮合服务，请诚信交易。交易过程中的任何纠纷由买卖双方自行协商解决，平台不承担任何责任。';
 
 const { Header, Content } = Layout;
 const { useBreakpoint } = Grid;
@@ -34,6 +37,7 @@ export default function AppLayout() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [bannerVisible, setBannerVisible] = useState(true);
 
   const fetchUnread = useCallback(() => {
     if (user) {
@@ -75,6 +79,16 @@ export default function AppLayout() {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
+      {bannerVisible && (
+        <Alert
+          message={DISCLAIMER_BANNER}
+          type="warning"
+          banner
+          closable
+          onClose={() => setBannerVisible(false)}
+          style={{ textAlign: 'center' }}
+        />
+      )}
       <Header
         style={{
           display: 'flex',
