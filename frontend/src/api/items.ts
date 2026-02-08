@@ -20,6 +20,7 @@ export interface ListItemsParams {
   sort?: string;
   search?: string;
   status?: string;
+  liked_only?: boolean;
 }
 
 export const itemsApi = {
@@ -29,8 +30,10 @@ export const itemsApi = {
   list: (params: ListItemsParams = {}) =>
     client.get<PaginatedResponse<AuctionItemCard>>('/items', { params }),
 
-  get: (id: number) =>
-    client.get<{ item: AuctionItemDetail }>(`/items/${id}`),
+  get: (id: number, recordView?: boolean) =>
+    client.get<{ item: AuctionItemDetail }>(`/items/${id}`, {
+      params: recordView ? { record_view: 'true' } : undefined,
+    }),
 
   update: (id: number, data: Partial<CreateItemData>) =>
     client.put<{ item: AuctionItemDetail }>(`/items/${id}`, data),
@@ -49,4 +52,7 @@ export const itemsApi = {
 
   myBids: () =>
     client.get<{ items: AuctionItemCard[] }>('/items/my-bids'),
+
+  toggleLike: (id: number) =>
+    client.post<{ is_liked: boolean; like_count: number }>(`/items/${id}/like`),
 };

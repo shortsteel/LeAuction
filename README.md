@@ -30,7 +30,7 @@ pip install -r requirements.txt
 python run.py
 ```
 
-后端运行在 http://localhost:5000
+后端运行在 http://localhost:5001
 
 ### 2. 启动前端
 
@@ -48,7 +48,7 @@ npm run dev
 docker compose up -d --build
 ```
 
-访问 http://localhost:5000
+访问 http://localhost:5001
 
 ## 项目结构
 

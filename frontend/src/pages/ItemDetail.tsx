@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Card, Row, Col, Typography, Tag, Image, Button, InputNumber, Divider,
   List, Avatar, Space, Descriptions, Alert, Spin, Grid, message, Modal, Input,
@@ -6,7 +6,7 @@ import {
 import {
   UserOutlined, ClockCircleOutlined, DollarOutlined, FireOutlined,
   CheckCircleOutlined, ExclamationCircleOutlined, SyncOutlined, ShareAltOutlined,
-  MessageOutlined, SendOutlined, PictureOutlined,
+  MessageOutlined, SendOutlined, PictureOutlined, EyeOutlined, HeartOutlined, HeartFilled,
 } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -39,15 +39,19 @@ export default function ItemDetail() {
   const [commentContent, setCommentContent] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
   const [commentsTotal, setCommentsTotal] = useState(0);
+  const [liking, setLiking] = useState(false);
 
   const isSeller = user && item && user.id === item.seller_id;
   const isWinner = user && item && user.id === item.winner_id;
 
-  const fetchItem = useCallback(async () => {
+  // Track whether initial view has been recorded to avoid duplicates
+  const viewRecorded = useRef(false);
+
+  const fetchItem = useCallback(async (recordView = false) => {
     if (!id) return;
     try {
       const [itemRes, bidsRes] = await Promise.all([
-        itemsApi.get(Number(id)),
+        itemsApi.get(Number(id), recordView),
         bidsApi.list(Number(id)),
       ]);
       setItem(itemRes.data.item);
@@ -69,8 +73,14 @@ export default function ItemDetail() {
     }
   }, [id, user]);
 
+  // Initial load: record view only once
   useEffect(() => {
-    fetchItem();
+    if (!viewRecorded.current) {
+      viewRecorded.current = true;
+      fetchItem(true);
+    } else {
+      fetchItem(false);
+    }
   }, [fetchItem]);
 
   // Poll for updates when item is active
@@ -96,7 +106,7 @@ export default function ItemDetail() {
       }
     };
 
-    const timer = setInterval(poll, 5000);
+    const timer = setInterval(poll, 5001);
     return () => clearInterval(timer);
   }, [id, isActive]);
 
@@ -188,43 +198,69 @@ export default function ItemDetail() {
     if (!item) return;
     const url = window.location.href;
 
-    // 描述截断
-    const desc = item.description
-      ? item.description.length > 30
-        ? item.description.slice(0, 30) + '...'
-        : item.description
-      : '暂无描述';
+    // 价格显示：去掉不必要的小数
+    const fmtPrice = (v: number) => Number.isInteger(v) ? `${v}` : v.toFixed(2);
 
-    // 结束时间
-    const endTimeText = item.end_time
-      ? item.status === 'active'
-        ? `结束时间: ${dayjs(item.end_time).format('YYYY-MM-DD HH:mm')}`
-        : `结拍时间: ${dayjs(item.end_time).format('YYYY-MM-DD HH:mm')}`
-      : '';
+    // 根据状态构造不同的分享文案
+    const lines: string[] = [];
 
-    const lines = [
-      `🔨【${item.title}】`,
-      '',
-      `📋 ${STATUS_MAP[item.status]} | ${CATEGORY_MAP[item.category]} | ${CONDITION_MAP[item.condition]}`,
-      `📝 ${desc}`,
-      '',
-      `💰 当前价: ¥${item.current_price.toFixed(2)}`,
-      `🏷️ 起拍价: ¥${item.starting_price.toFixed(2)}`,
-      item.buyout_price ? `⚡ 一口价: ¥${item.buyout_price.toFixed(2)}` : '',
-      `📈 加价幅度: ¥${item.increment.toFixed(2)}`,
-      `🔥 出价次数: ${item.bid_count} 次`,
-      endTimeText ? `⏰ ${endTimeText}` : '',
-      item.seller?.nickname ? `👤 卖家: ${item.seller.nickname}` : '',
-      '',
-      `🔗 ${url}`,
-    ].filter((line) => line !== '');
+    // 第一行：标题 + 成色
+    lines.push(`🔨【${item.title}】${CONDITION_MAP[item.condition]}`);
+
+    if (['ended_won', 'completed'].includes(item.status)) {
+      // 已成交/已完成
+      lines.push(`💰 成交价 ¥${fmtPrice(item.current_price)} · ${item.bid_count}人出价`);
+      lines.push(`✅ ${STATUS_MAP[item.status]}`);
+    } else if (item.status === 'active') {
+      // 进行中
+      lines.push(`💰 当前价 ¥${fmtPrice(item.current_price)} · ${item.bid_count}人出价`);
+      if (item.buyout_price) {
+        lines.push(`⚡ 一口价 ¥${fmtPrice(item.buyout_price)}`);
+      }
+      if (item.end_time) {
+        lines.push(`⏰ ${dayjs(item.end_time).format('M月D日 HH:mm')} 截拍`);
+      }
+    } else {
+      // 其他状态（流拍、取消等）
+      lines.push(`💰 ¥${fmtPrice(item.current_price)} · ${STATUS_MAP[item.status]}`);
+    }
+
+    lines.push(`👉 ${url}`);
+
     const text = lines.join('\n');
 
     try {
       await navigator.clipboard.writeText(text);
-      message.success('拍品信息已复制到剪贴板，快去分享吧');
+      message.success('已复制，快去分享吧');
     } catch {
       message.error('复制失败，请手动复制');
+    }
+  };
+
+  const handleToggleLike = async () => {
+    if (!item) return;
+    if (!user) {
+      message.info('请先登录后再点赞');
+      navigate('/login');
+      return;
+    }
+    setLiking(true);
+    // Optimistic update
+    const prevLiked = item.is_liked;
+    const prevCount = item.like_count;
+    setItem({
+      ...item,
+      is_liked: !prevLiked,
+      like_count: prevLiked ? Math.max(prevCount - 1, 0) : prevCount + 1,
+    });
+    try {
+      const res = await itemsApi.toggleLike(item.id);
+      setItem((prev) => prev ? { ...prev, is_liked: res.data.is_liked, like_count: res.data.like_count } : prev);
+    } catch {
+      // Revert on error
+      setItem((prev) => prev ? { ...prev, is_liked: prevLiked, like_count: prevCount } : prev);
+    } finally {
+      setLiking(false);
     }
   };
 
@@ -289,14 +325,25 @@ export default function ItemDetail() {
 
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                 <Title level={3} style={{ margin: 0 }}>{item.title}</Title>
-                <Button
-                  type="text"
-                  icon={<ShareAltOutlined />}
-                  onClick={handleShare}
-                  style={{ flexShrink: 0, fontSize: 16 }}
-                >
-                  分享
-                </Button>
+                <Space size={0} style={{ flexShrink: 0 }}>
+                  <Button
+                    type="text"
+                    icon={item.is_liked ? <HeartFilled style={{ color: '#eb2f96' }} /> : <HeartOutlined />}
+                    onClick={handleToggleLike}
+                    loading={liking}
+                    style={{ fontSize: 16 }}
+                  >
+                    {item.like_count || 0}
+                  </Button>
+                  <Button
+                    type="text"
+                    icon={<ShareAltOutlined />}
+                    onClick={handleShare}
+                    style={{ fontSize: 16 }}
+                  >
+                    分享
+                  </Button>
+                </Space>
               </div>
 
               {/* Price Section */}
@@ -339,6 +386,8 @@ export default function ItemDetail() {
               <Descriptions column={screens.md ? 2 : 1} size="small">
                 <Descriptions.Item label={<><FireOutlined /> 出价次数</>}>{item.bid_count} 次</Descriptions.Item>
                 <Descriptions.Item label={<><DollarOutlined /> 加价幅度</>}>¥{item.increment.toFixed(2)}</Descriptions.Item>
+                <Descriptions.Item label={<><EyeOutlined /> 浏览量</>}>{item.view_count || 0}</Descriptions.Item>
+                <Descriptions.Item label={<><HeartOutlined /> 点赞</>}>{item.like_count || 0}</Descriptions.Item>
                 {item.end_time && (
                   <Descriptions.Item label={<><ClockCircleOutlined /> 剩余时间</>}>
                     {item.status === 'active' ? <CountDown endTime={item.end_time} onEnd={fetchItem} /> : dayjs(item.end_time).format('YYYY-MM-DD HH:mm')}
@@ -420,6 +469,27 @@ export default function ItemDetail() {
           {item.description || '暂无描述'}
         </Paragraph>
       </Card>
+
+      {/* Liked Users */}
+      {item.liked_users && item.liked_users.length > 0 && (
+        <Card
+          style={{ marginTop: 24 }}
+          styles={{ body: { padding: '12px 16px' } }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <HeartFilled style={{ color: '#eb2f96', fontSize: 16 }} />
+            <Text>
+              {item.liked_users.map((u, idx) => (
+                <span key={u.id}>
+                  <Text strong>{u.nickname}</Text>
+                  {idx < item.liked_users!.length - 1 && '、'}
+                </span>
+              ))}
+              {' '}点赞了该宝贝
+            </Text>
+          </div>
+        </Card>
+      )}
 
       {/* Bid History */}
       <Card

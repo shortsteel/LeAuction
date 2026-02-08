@@ -77,6 +77,8 @@ class AuctionItem(db.Model):
     buyout_price = db.Column(db.Float, nullable=True)  # 一口价
     current_price = db.Column(db.Float, nullable=False)  # 当前最高价
     bid_count = db.Column(db.Integer, default=0)
+    view_count = db.Column(db.Integer, default=0)
+    like_count = db.Column(db.Integer, default=0)
     start_time = db.Column(db.DateTime(timezone=True), nullable=True)
     end_time = db.Column(db.DateTime(timezone=True), nullable=True)
     status = db.Column(db.String(20), default=STATUS_DRAFT, index=True)
@@ -99,6 +101,9 @@ class AuctionItem(db.Model):
         "Bid", backref="item", lazy="dynamic", cascade="all, delete-orphan"
     )
     winner = db.relationship("User", foreign_keys=[winner_id])
+    likes = db.relationship(
+        "ItemLike", backref="item", lazy="dynamic", cascade="all, delete-orphan"
+    )
 
     def to_dict(self, include_reserve=False):
         data = {
@@ -114,6 +119,8 @@ class AuctionItem(db.Model):
             "buyout_price": self.buyout_price,
             "current_price": self.current_price,
             "bid_count": self.bid_count,
+            "view_count": self.view_count,
+            "like_count": self.like_count,
             "start_time": ensure_utc(self.start_time).isoformat() if self.start_time else None,
             "end_time": ensure_utc(self.end_time).isoformat() if self.end_time else None,
             "status": self.status,
@@ -148,6 +155,8 @@ class AuctionItem(db.Model):
             "starting_price": self.starting_price,
             "buyout_price": self.buyout_price,
             "bid_count": self.bid_count,
+            "view_count": self.view_count,
+            "like_count": self.like_count,
             "end_time": ensure_utc(self.end_time).isoformat() if self.end_time else None,
             "status": self.status,
             "image_url": first_image.image_url if first_image else None,
@@ -173,6 +182,26 @@ class ItemImage(db.Model):
             "image_url": self.image_url,
             "sort_order": self.sort_order,
         }
+
+
+class ItemLike(db.Model):
+    __tablename__ = "item_likes"
+    __table_args__ = (
+        db.UniqueConstraint("item_id", "user_id", name="uq_item_like"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    item_id = db.Column(
+        db.Integer, db.ForeignKey("auction_items.id"), nullable=False, index=True
+    )
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=False, index=True
+    )
+    created_at = db.Column(
+        db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+
+    user = db.relationship("User", foreign_keys=[user_id])
 
 
 class Bid(db.Model):

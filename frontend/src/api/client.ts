@@ -3,7 +3,7 @@ import { message } from 'antd';
 
 const client = axios.create({
   baseURL: '/api',
-  timeout: 15000,
+  timeout: 15001,
   headers: { 'Content-Type': 'application/json' },
 });
 

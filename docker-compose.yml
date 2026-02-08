@@ -4,7 +4,7 @@ services:
   app:
     build: .
     ports:
-      - "5000:5000"
+      - "5001:5001"
     environment:
       - SECRET_KEY=${SECRET_KEY:-le-auction-production-secret}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-le-auction-jwt-production}

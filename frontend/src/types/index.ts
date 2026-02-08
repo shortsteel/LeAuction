@@ -27,12 +27,15 @@ export interface AuctionItemCard {
   starting_price: number;
   buyout_price: number | null;
   bid_count: number;
+  view_count: number;
+  like_count: number;
   end_time: string | null;
   status: string;
   image_url: string | null;
   seller: PublicUser | null;
   reserve_met: boolean;
   has_reserve: boolean;
+  is_liked?: boolean;
   // Extra fields for my-bids
   my_max_bid?: number;
   is_leading?: boolean;
@@ -53,6 +56,10 @@ export interface AuctionItemDetail {
   buyout_price: number | null;
   current_price: number;
   bid_count: number;
+  view_count: number;
+  like_count: number;
+  is_liked?: boolean;
+  liked_users?: PublicUser[];
   start_time: string | null;
   end_time: string | null;
   status: string;

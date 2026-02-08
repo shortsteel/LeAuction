@@ -4,7 +4,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from app import db
-from app.models import AuctionItem, ItemImage
+from app.models import AuctionItem, ItemImage, ItemLike
 
 items_bp = Blueprint("items", __name__)
 
@@ -60,8 +60,20 @@ def list_items():
     sort = request.args.get("sort", "newest")
     search = request.args.get("search", "").strip()
     status = request.args.get("status", "active")
+    liked_only = request.args.get("liked_only", "").lower() == "true"
 
     query = AuctionItem.query
+
+    # Filter by liked items (must be logged in)
+    current_user_id = _get_current_user_id()
+    if liked_only and current_user_id:
+        liked_item_ids = [
+            row[0]
+            for row in db.session.query(ItemLike.item_id)
+            .filter(ItemLike.user_id == current_user_id)
+            .all()
+        ]
+        query = query.filter(AuctionItem.id.in_(liked_item_ids))
 
     # Filter by status
     if status == "active":
@@ -105,6 +117,11 @@ def list_items():
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     items = [item.to_card_dict() for item in pagination.items]
 
+    # Attach is_liked for logged-in users
+    if not liked_only:
+        current_user_id = _get_current_user_id()
+    _attach_is_liked(items, current_user_id)
+
     return jsonify(
         {
             "items": items,
@@ -121,18 +138,33 @@ def get_item(item_id):
     if not item:
         return jsonify({"errors": ["拍品不存在"]}), 404
 
+    # Only increment view count when explicitly requested (first page load)
+    if request.args.get("record_view", "").lower() == "true":
+        item.view_count = (item.view_count or 0) + 1
+        db.session.commit()
+
     # Check if the requester is the seller (to show reserve price)
     include_reserve = False
-    from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity as get_id
-    try:
-        verify_jwt_in_request(optional=True)
-        current_user_id = get_id()
-        if current_user_id and int(current_user_id) == item.seller_id:
+    is_liked = False
+    current_user_id = _get_current_user_id()
+    if current_user_id:
+        if current_user_id == item.seller_id:
             include_reserve = True
-    except Exception:
-        pass
+        like = ItemLike.query.filter_by(item_id=item.id, user_id=current_user_id).first()
+        is_liked = like is not None
 
-    return jsonify({"item": item.to_dict(include_reserve=include_reserve)})
+    data = item.to_dict(include_reserve=include_reserve)
+    data["is_liked"] = is_liked
+
+    # Attach liked users list
+    liked_users = [
+        like.user.to_public_dict()
+        for like in ItemLike.query.filter_by(item_id=item.id).all()
+        if like.user
+    ]
+    data["liked_users"] = liked_users
+
+    return jsonify({"item": data})
 
 
 @items_bp.route("/<int:item_id>", methods=["PUT"])
@@ -238,6 +270,32 @@ def publish_item(item_id):
     return jsonify({"item": item.to_dict(include_reserve=True)})
 
 
+@items_bp.route("/<int:item_id>/like", methods=["POST"])
+@jwt_required()
+def toggle_like(item_id):
+    user_id = int(get_jwt_identity())
+    item = db.session.get(AuctionItem, item_id)
+
+    if not item:
+        return jsonify({"errors": ["拍品不存在"]}), 404
+
+    existing = ItemLike.query.filter_by(item_id=item.id, user_id=user_id).first()
+    if existing:
+        # Unlike
+        db.session.delete(existing)
+        item.like_count = max((item.like_count or 0) - 1, 0)
+        is_liked = False
+    else:
+        # Like
+        like = ItemLike(item_id=item.id, user_id=user_id)
+        db.session.add(like)
+        item.like_count = (item.like_count or 0) + 1
+        is_liked = True
+
+    db.session.commit()
+    return jsonify({"is_liked": is_liked, "like_count": item.like_count})
+
+
 @items_bp.route("/<int:item_id>/cancel", methods=["POST"])
 @jwt_required()
 def cancel_item(item_id):
@@ -288,6 +346,7 @@ def my_items():
 
     query = query.order_by(AuctionItem.created_at.desc())
     items = [item.to_card_dict() for item in query.all()]
+    _attach_is_liked(items, user_id)
     return jsonify({"items": items})
 
 
@@ -332,7 +391,36 @@ def my_bids():
         card["is_winner"] = item.winner_id == user_id
         result.append(card)
 
+    _attach_is_liked(result, user_id)
     return jsonify({"items": result})
+
+
+def _get_current_user_id():
+    """Try to get the current user id from an optional JWT. Returns int or None."""
+    from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity as get_id
+    try:
+        verify_jwt_in_request(optional=True)
+        uid = get_id()
+        return int(uid) if uid else None
+    except Exception:
+        return None
+
+
+def _attach_is_liked(cards, user_id):
+    """Attach is_liked field to a list of card dicts for the given user."""
+    if not user_id or not cards:
+        for c in cards:
+            c["is_liked"] = False
+        return cards
+    item_ids = [c["id"] for c in cards]
+    liked_ids = set(
+        row[0] for row in db.session.query(ItemLike.item_id)
+        .filter(ItemLike.user_id == user_id, ItemLike.item_id.in_(item_ids))
+        .all()
+    )
+    for c in cards:
+        c["is_liked"] = c["id"] in liked_ids
+    return cards
 
 
 def _validate_item_data(data, is_update=False):

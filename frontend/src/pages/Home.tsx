@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Row, Col, Input, Select, Segmented, Pagination, Empty, Spin, Grid } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
+import { Row, Col, Input, Select, Segmented, Pagination, Empty, Spin, Grid, Switch, Tooltip } from 'antd';
+import { SearchOutlined, HeartFilled } from '@ant-design/icons';
 import type { AuctionItemCard } from '../types';
 import { CATEGORY_MAP } from '../types';
 import { itemsApi } from '../api/items';
 import ItemCard from '../components/ItemCard';
+import { useAuth } from '../store/AuthContext';
 
 const { useBreakpoint } = Grid;
 
@@ -28,6 +29,7 @@ const categoryOptions = [
 
 export default function Home() {
   const screens = useBreakpoint();
+  const { user } = useAuth();
   const [items, setItems] = useState<AuctionItemCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -36,11 +38,20 @@ export default function Home() {
   const [category, setCategory] = useState('');
   const [status, setStatus] = useState('active');
   const [sort, setSort] = useState('newest');
+  const [likedOnly, setLikedOnly] = useState(false);
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await itemsApi.list({ page, per_page: 20, search, category: category || undefined, sort, status });
+      const res = await itemsApi.list({
+        page,
+        per_page: 20,
+        search,
+        category: category || undefined,
+        sort,
+        status,
+        liked_only: likedOnly || undefined,
+      });
       setItems(res.data.items);
       setTotal(res.data.total);
     } catch {
@@ -48,7 +59,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, category, sort, status]);
+  }, [page, search, category, sort, status, likedOnly]);
 
   useEffect(() => {
     fetchItems();
@@ -57,7 +68,7 @@ export default function Home() {
   // Reset page on filter change
   useEffect(() => {
     setPage(1);
-  }, [search, category, sort, status]);
+  }, [search, category, sort, status, likedOnly]);
 
   const colSpan = screens.xl ? 6 : screens.lg ? 8 : screens.md ? 8 : screens.sm ? 12 : 24;
 
@@ -92,6 +103,19 @@ export default function Home() {
           options={sortOptions}
           size="middle"
         />
+        {user && (
+          <Tooltip title="只看我点赞的拍品">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={() => setLikedOnly((v) => !v)}>
+              <Switch
+                checked={likedOnly}
+                size="small"
+                onChange={setLikedOnly}
+              />
+              <HeartFilled style={{ color: likedOnly ? '#ff4d4f' : '#d9d9d9', fontSize: 14, transition: 'color 0.3s' }} />
+              <span style={{ fontSize: 14, color: likedOnly ? '#ff4d4f' : undefined, whiteSpace: 'nowrap', transition: 'color 0.3s' }}>我的收藏</span>
+            </div>
+          </Tooltip>
+        )}
       </div>
 
       {/* Item Grid */}

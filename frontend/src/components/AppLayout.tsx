@@ -17,7 +17,7 @@ import { notificationsApi } from '../api/notifications';
 import DisclaimerModal from './DisclaimerModal';
 
 const DISCLAIMER_BANNER =
-  '本平台仅提供信息展示和竞拍撮合服务，请诚信交易。点击查看完整免责声明 →';
+  '欢迎使用 乐拍 内部拍卖平台！在使用本平台前，请您仔细阅读以下声明：';
 
 const { Header, Content } = Layout;
 const { useBreakpoint } = Grid;

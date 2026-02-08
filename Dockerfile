@@ -29,6 +29,6 @@ COPY --from=frontend-builder /app/frontend/dist /app/static
 # Create uploads directory
 RUN mkdir -p uploads
 
-EXPOSE 5000
+EXPOSE 5001
 
 CMD ["python", "run.py"]
