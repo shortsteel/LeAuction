@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Card, Tag, Typography, Space, Avatar, message } from 'antd';
 import { FireOutlined, UserOutlined, ClockCircleOutlined, PictureOutlined, EyeOutlined, HeartOutlined, HeartFilled } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import dayjs from 'dayjs';
 import type { AuctionItemCard } from '../types';
 import { CATEGORY_MAP, CONDITION_MAP, STATUS_MAP, STATUS_COLOR } from '../types';
 import { itemsApi } from '../api/items';
@@ -142,6 +143,13 @@ export default function ItemCard({ item, extra }: ItemCardProps) {
           <ClockCircleOutlined style={{ fontSize: 12, color: '#999' }} />
           <Text type="secondary" style={{ fontSize: 12 }}>剩余: </Text>
           <CountDown endTime={item.end_time} />
+        </div>
+      )}
+
+      {item.end_time && item.status !== 'active' && (
+        <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <ClockCircleOutlined style={{ fontSize: 12, color: '#999' }} />
+          <Text type="secondary" style={{ fontSize: 12 }}>结束: {dayjs(item.end_time).format('YYYY-MM-DD HH:mm')}</Text>
         </div>
       )}
 

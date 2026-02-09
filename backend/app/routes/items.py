@@ -59,7 +59,7 @@ def list_items():
     category = request.args.get("category")
     sort = request.args.get("sort", "newest")
     search = request.args.get("search", "").strip()
-    status = request.args.get("status", "active")
+    status = request.args.get("status", "all")
     liked_only = request.args.get("liked_only", "").lower() == "true"
 
     query = AuctionItem.query

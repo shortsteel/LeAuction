@@ -397,7 +397,7 @@ export default function ItemDetail() {
                 <Descriptions.Item label={<><EyeOutlined /> 浏览量</>}>{item.view_count || 0}</Descriptions.Item>
                 <Descriptions.Item label={<><HeartOutlined /> 点赞</>}>{item.like_count || 0}</Descriptions.Item>
                 {item.end_time && (
-                  <Descriptions.Item label={<><ClockCircleOutlined /> 剩余时间</>}>
+                  <Descriptions.Item label={<><ClockCircleOutlined /> {item.status === 'active' ? '剩余时间' : '结束时间'}</>}>
                     {item.status === 'active' ? <CountDown endTime={item.end_time} onEnd={fetchItem} /> : dayjs(item.end_time).format('YYYY-MM-DD HH:mm')}
                   </Descriptions.Item>
                 )}

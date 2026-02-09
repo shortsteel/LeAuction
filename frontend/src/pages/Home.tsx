@@ -36,7 +36,7 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
-  const [status, setStatus] = useState('active');
+  const [status, setStatus] = useState('all');
   const [sort, setSort] = useState('newest');
   const [likedOnly, setLikedOnly] = useState(false);
 
