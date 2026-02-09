@@ -207,6 +207,14 @@ export default function ItemDetail() {
     // 第一行：标题 + 成色
     lines.push(`🔨【${item.title}】${CONDITION_MAP[item.condition]}`);
 
+    // 描述（超过50字截断）
+    if (item.description) {
+      const desc = item.description.length > 50
+        ? item.description.slice(0, 50) + '...'
+        : item.description;
+      lines.push(`📝 ${desc}`);
+    }
+
     if (['ended_won', 'completed'].includes(item.status)) {
       // 已成交/已完成
       lines.push(`💰 成交价 ¥${fmtPrice(item.current_price)} · ${item.bid_count}人出价`);
